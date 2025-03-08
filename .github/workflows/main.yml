@@ -1,0 +1,35 @@
+name: CI  # Имя workflow
+
+on:
+  push:
+    branches:
+      - main  # Запускать CI/CD при пуше в main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Используем GitHub-hosted runner (Ubuntu)
+
+    steps:
+      - name: 📥 Клонируем репозиторий
+        uses: actions/checkout@v4
+
+      - name: 🐳 Собираем Docker-образ
+        run: docker build -t containers08 .
+
+      - name: 📦 Создаём контейнер
+        run: docker create --name container --volume database:/var/www/db containers08
+
+      - name: 📄 Копируем тесты в контейнер
+        run: docker cp ./tests container:/var/www/html
+
+      - name: 🚀 Запускаем контейнер
+        run: docker start container
+
+      - name: ✅ Запускаем тесты
+        run: docker exec container php /var/www/html/tests/tests.php
+
+      - name: ⛔ Останавливаем контейнер
+        run: docker stop container
+
+      - name: 🗑 Удаляем контейнер
+        run: docker rm container
